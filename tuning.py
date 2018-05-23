@@ -7,6 +7,8 @@ Created on Sat May 19 17:56:57 2018
 
 import numpy as np
 import json
+import time
+from multiprocessing import Pool
 from random import gauss
 from sklearn import random_projection
 from sklearn.utils import shuffle
@@ -100,7 +102,8 @@ def add_noise(learning_rate, batch_size, num_dimensions, epsilon):
     return l * v
     
 
-def sgd(X, y, amount_in_interval, random_state):
+def sgd(all_input_params):
+    X, y, amount_in_interval, random_state = all_input_params
     # X are the predictors, come as np array
     # y are the targets, come as np array
     # amount_in_interval is the number of samples used to geneerate learning curve
@@ -169,7 +172,7 @@ def sgd(X, y, amount_in_interval, random_state):
                         parameters['learning_rate'].append(learning_rate)
                         parameters['batch_size'].append(batch_size)
                         parameters['weight_decay'].append(weight_decay)
-                        
+                        print('epoach..', flush = True)
                         #print('{} out of {} correct with batch size {}, learning_rate: {}'.format(num_correct, len(y_validation), batch_size, learning_rate))
             #print('=========================================================================')
             #print('error rate', parameters['error_rate'])
@@ -190,7 +193,7 @@ def sgd(X, y, amount_in_interval, random_state):
             
 #%%
 if __name__ == '__main__':
-    debugging = True
+    debugging = False
     if debugging:
     # get the data and preprocess it
         digits = load_digits()
@@ -212,6 +215,22 @@ if __name__ == '__main__':
         y[y == 4] = -1
         y[y == 9] = 1
         
+    else:
+        num1, num2 = 4, 9
+        y_train, X_train = [], []
+        with open('mnist_train.csv') as l:
+            for i, line in enumerate(l):
+                line = line.split(',')
+                label = int(line[0])
+                if label == num1 or label == num2:
+                    features = [float(i) for i in line[1:]]
+                    y_train.append(label)
+                    X_train.append(features)
+        y_train = np.asarray(y_train)
+        X_train = np.asarray(X_train)
+        
+        y_train[y_train == num1] = -1
+        y_train[y_train == num2] = 1
     # standardize the data
     scaler = StandardScaler()
     scaler.fit(X_without_bias)
@@ -228,18 +247,24 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_splits = 10
+    num_splits = 30
     num_samples = len(y)
     amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     
     max_integer_val = np.iinfo(np.int32).max
     
+    num_processes = 24
+    args = [(X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val)) for i in range(num_processes)] 
+    t1 = time.time()
+    p = Pool(num_processes)
     
-    all_results = [sgd(X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))]
+    all_results = p.map(sgd, args)# [sgd(X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))] 
     #%%
-    
+    p.close()
+    p.join()
+    print('multiporcessing finsihed, time: {}'.format(time.time() - t1))
     # nafnid a splitinu er key
-    all_results_flatten = {}
+    all_results_flatten = {} 
     for result in all_results:
         for i, values in enumerate(result):
             epsilon = values[0]
