@@ -148,20 +148,20 @@ if __name__ == '__main__':
         
     else:
         num1, num2 = 4, 9
-        y_train, X_train = [], []
+        y, X_without_bias = [], []
         with open('mnist_train.csv') as l:
             for i, line in enumerate(l):
                 line = line.split(',')
                 label = int(line[0])
                 if label == num1 or label == num2:
                     features = [float(i) for i in line[1:]]
-                    y_train.append(label)
-                    X_train.append(features)
-        y_train = np.asarray(y_train)
-        X_train = np.asarray(X_train)
+                    y.append(label)
+                    X_without_bias.append(features)
+        y = np.asarray(y)
+        X_without_bias = np.asarray(X_without_bias)
         
-        y_train[y_train == num1] = -1
-        y_train[y_train == num2] = 1
+        y[y == num1] = -1
+        y[y == num2] = 1
     # standardize the data
     scaler = StandardScaler()
     scaler.fit(X_without_bias)
