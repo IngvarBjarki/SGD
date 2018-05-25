@@ -39,7 +39,7 @@ def sgd(all_input_params):
     X, y = shuffle(X, y)
     
     num_dimensions = len(X[0])
-    num_in_batch = [1, 2, 5, 10, 50, 75, 100, 150]
+    num_in_batch = [1, 2, 5, 10, 50, 75, 100, 150, 200, 250, 300]
     epochs = 1
     k_splits = 5
     learning_rates = [0.0001, 0.005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 3]
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_splits = 1
+    num_splits = 50
     num_samples = len(y)
     amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
