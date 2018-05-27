@@ -39,10 +39,10 @@ def sgd(all_input_params):
     X, y = shuffle(X, y)
     
     num_dimensions = len(X[0])
-    num_in_batch = [1, 2, 5, 10, 50, 75, 100, 150, 200, 250, 300]
+    num_in_batch = [1, 2, 5, 10, 50, 75, 100, 150, 200]
     epochs = 1
     k_splits = 5
-    learning_rates = [0.0001, 0.005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 3]
+    learning_rates = [0.0001,  0.001,  0.01, 0.1, 1, 3]
     epsilons = [0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 10, float('Inf')] # inf makes the noise go to zero -- equal to having no noise
     #epsilon = 200
     weight_decays = [10**(-2), 10**(-5), 10**(-10), 10**(-15)]
@@ -76,13 +76,12 @@ def sgd(all_input_params):
                                     #l2 = np.linalg.norm(weights, ord = 2)
                                     l2_derivative = sum(weights)
                                     # get the noise for all dimensions
-                                    noise = utils.add_noise(learning_rate, batch_size, num_dimensions, epsilon)
+                                    noise = utils.add_noise(num_dimensions, epsilon)
                                     
                                 
                                     # take a step towrads the optima
                                     weights -= learning_rate *(weight_decay * l2_derivative  + utils.loss_derivative(X_batch, y_batch, weights) / batch_size + noise / batch_size) 
                         
-                        #print('epoch: {} out of {}'.format(i, epochs))
                     
                     
                             # now we predict with the trained weights, using logistic regression
@@ -93,7 +92,6 @@ def sgd(all_input_params):
                             avg_error += num_correct/len(y_validation)
             
                         avg_error /= k_splits
-                        print('1 - avg_error {}, lr {} bs {} wd {}'.format(1 - avg_error, learning_rate, batch_size, weight_decay))
                         parameters['error_rate'].append(1 - avg_error)
                         parameters['learning_rate'].append(learning_rate)
                         parameters['batch_size'].append(batch_size)
@@ -107,15 +105,16 @@ def sgd(all_input_params):
             
             # find the optimal parameters fro the cross validation --
             optimal_index = utils.get_min_index(parameters['error_rate'], parameters['batch_size'])
-            print('epsilon {}, n {}'.format(epsilon, n))
-            print(parameters['error_rate'])
-            print('len(parameters[error_rate])', len(parameters['error_rate']))
+
             
             optimal_results['parameters'].append((parameters['learning_rate'][optimal_index]\
                               , parameters['batch_size'][optimal_index], parameters['weight_decay'][optimal_index]))
             optimal_results['error_rate'].append(parameters['error_rate'][optimal_index])
             # clear parameters for next run
             parameters = {'learning_rate':[], 'batch_size':[], 'weight_decay':[], 'error_rate':[]}
+            
+            print('tuning for epsilon: {} done'.format(epsilon))
+            
             # save the optimal parameters for each epsilon
         all_optimal_results.append((epsilon, optimal_results))
             

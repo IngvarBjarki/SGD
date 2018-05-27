@@ -79,8 +79,8 @@ def make_rand_vector(dims):
     return [x/mag for x in vec]
 
 
-def add_noise(learning_rate, batch_size, num_dimensions, epsilon):
-    # learning_rate is float, batch_size is int, num_dimensions is int and epsilon is float
+def add_noise(num_dimensions, epsilon):
+    #  num_dimensions is int and epsilon is float
     
     # we sample a uniform vector in the unit ball
     v = make_rand_vector(num_dimensions)
