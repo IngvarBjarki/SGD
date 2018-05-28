@@ -33,7 +33,7 @@ def sgd(all_input_params):
     # shuffle so different data will be used in each process
     X_train, y_train = shuffle(X_train, y_train)
     
-    num_dimensions = len(X[0])
+    num_dimensions = len(X_train[0])
     epochs = 1
     epsilons = [0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 10, float('Inf')] # inf makes the noise go to zero -- equal to having no noise
     
@@ -153,6 +153,7 @@ if __name__ == '__main__':
         # since we are classifying with the sign - we translate the y vector  to -1 to 1
         y[y == num1] = -1
         y[y == num2] = 1
+        X_train_without_bias , X_test_without_bias, y_train, y_test = train_test_split(X_without_bias , y)
         
         
     else:
@@ -171,24 +172,50 @@ if __name__ == '__main__':
         
         y[y == num1] = -1
         y[y == num2] = 1
+        
+        y_test, X_test_without_bias = [], []
+        with open('mnist_test.csv') as l:
+            for i, line in enumerate(l):
+                line = line.split(',')
+                label = int(line[0])
+                if label == num1 or label == num2:
+                    features = [float(i) for i in line[1:]]
+                    y_test.append(label)
+                    X_test_without_bias.append(features)
+        y_test = np.asarray(y_test)
+        X_test_without_bias = np.asarray(X_test_without_bias)
+        
+        y_test[y_test == num1] = -1
+        y_test[y_test == num2] = 1
+        
     
     # standardize the data
     scaler = StandardScaler()
     scaler.fit(X_without_bias)
-    X_without_bias = scaler.transform(X_without_bias)
+    X_train_without_bias = scaler.transform(X_train_without_bias)
+    
+    scaler.fit(X_test_without_bias)
+    X_test_without_bias = scaler.transform(X_without_bias)
     
     # project the data onto the unitball
-    X_without_bias = utils.project_onto_unitball(X_without_bias)
+    X_train_without_bias = utils.project_onto_unitball(X_train_without_bias)
+    X_test_without_bias = utils.project_onto_unitball(X_test_without_bias)
     
     
     # do the random projection as they do in the paper -- second paper
     transformer = random_projection.GaussianRandomProjection(n_components = 50)
-    X_without_bias = transformer.fit_transform(X_without_bias)
+    transformer.fit(X_train_without_bias)
+    X_train_without_bias = transformer.transform(X_train_without_bias)
+    X_test_without_bias = transformer.transform(X_test_without_bias)
     
     # we add bias term in front -- done for the gradient decent
-    records, attributes = np.shape(X_without_bias)
-    X = np.ones((records, attributes + 1))
-    X[:,1:] = X_without_bias
+    records, attributes = np.shape(X_train_without_bias)
+    X_train = np.ones((records, attributes + 1))
+    X_train[:,1:] = X_train_without_bias
+    
+    records, attributes = np.shape(X_test_without_bias)
+    X_test = np.ones((records, attributes + 1))
+    X_test[:,1:] = X_test_without_bias
     
     
     # split the data upp so to get the learning rate
@@ -217,23 +244,11 @@ if __name__ == '__main__':
             del parameters[epsilon][n]
         del parameters[epsilon]
     
-# =============================================================================
-#     # change the string tuple keys to tuples
-#     param_keys = list(parameters.keys())
-#     for key in param_keys:
-#         try:
-#             new_key = eval(key)
-#         except:
-#             # we know that eval dose not work on inf
-#             n = int(re.findall(r'\d+',key)[0])
-#             new_key = (float('Inf'), n)
-#         parameters[new_key] = parameters.pop(key)
-# =============================================================================
 
         
     
     if debugging:
-        X_train, X_test, y_train, y_test = train_test_split(X, y)
+        
         args = (X_train, y_train, X_test, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters)
         args2 = (X_train, y_train, X_test, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters)
         all_results = [sgd(args), sgd(args2)]
