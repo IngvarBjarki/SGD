@@ -125,6 +125,7 @@ def sgd(all_input_params):
 #%%
 if __name__ == '__main__':
     debugging = False
+    small_intervals_in_begining = True
     if debugging:
         # get the data and preprocess it
         digits = load_digits()
@@ -183,9 +184,15 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_splits = 50
     num_samples = len(y)
-    amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
+    if small_intervals_in_begining:
+        num_splits = 50
+        samples_to_check = 1000
+        amount_of_data_in_interval = np.cumsum([int(samples_to_check / num_splits) for i in range(num_splits - 5)]).tolist()
+        amount_of_data_in_interval += [2000, 4000, 6000, 8000, num_samples]
+    else:
+        num_splits = 50
+        amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
     if debugging:
@@ -236,7 +243,10 @@ if __name__ == '__main__':
 #%%        
     
     # the json has the key epsilon, numSamples, and value: learning_rate, batch_size, weight_decay
-    json_string = 'parameters.json'
+    if small_intervals_in_begining:
+        json_string = 'parameters_tight_begining.json'
+    else:
+        json_string = 'parameters.json'
     with open(json_string, 'w') as f:
         json.dump(final_results, f)
     print('Optimal parameter saved in {}'.format(json_string))
