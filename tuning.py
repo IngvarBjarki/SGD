@@ -220,59 +220,24 @@ if __name__ == '__main__':
                     error_rate = result[epsilon][n]['error_rate']
                     all_results_flatten[epsilon][n]['parameters'].append(params)
                     all_results_flatten[epsilon][n]['error_rate'].append(error_rate)
-# =============================================================================
-# #%%
-#     # nafnid a splitinu er key
-#     all_results_flatten = {} 
-#     for result in all_results:
-#         for i, values in enumerate(result):
-#             epsilon = values[0]
-#             parameters = values[1]['parameters']
-#             print('parameters ', parameters )
-#             error_rate = values[1]['error_rate']
-#             for i in range(len(parameters)):
-#                 key = (epsilon, amount_of_data_in_interval[i])
-#                 if key not in all_results_flatten:
-#                     all_results_flatten[key] = {}
-#                     all_results_flatten[key]['parameters'] = [parameters[i]]
-#                     all_results_flatten[key]['error_rate'] = [error_rate[i]]
-#                 else:
-#                     all_results_flatten[key]['parameters'].append(parameters[i])
-#                     all_results_flatten[key]['error_rate'].append(error_rate[i])
-#             
-#             print('***********************************')
-# #%%            
-#     # find which parameter is most common
-#     final_results = {}
-#     for key in all_results_flatten:
-#         param, error_rate = utils.get_most_common(all_results_flatten[key]['parameters'], all_results_flatten[key]['error_rate'])
-#         key = str(key)
-#         final_results[key] = {}
-#         final_results[key]['parameters'] = param
-#         final_results[key]['error_rate'] = error_rate
-# #%%
-# 
-#     final_results = {}
-#     for epsilon in all_results_flatten:
-#         final_results[str(epsilon)] = {}
-#         for n in all_results_flatten[epsilon]:
-#             param, error_rate = utils.get_most_common(all_results_flatten[epsilon][n]['parameters'], all_results_flatten[epsilon][n]['error_rate'])
-#             
-#             final_results[str(epsilon)][str(n)] = {}
-#             final_results[str(epsilon)][str(n)]['parameters'] = param
-#             final_results[str(epsilon)][str(n)]['error_rate'] = error_rate
-# #%%        
-#     
-#     # the json has the key epsilon, numSamples, and value: learning_rate, batch_size, weight_decay
-#     json_string = 'parameters.json'
-#     with open(json_string, 'w') as f:
-#         json.dump(final_results, f)
-#     print('Optimal parameter saved in {}'.format(json_string))
-#         
-#     # maybe we would like to get the batcheses which are most often used.
-#     
-# =============================================================================
-    
+
 #%%
+    final_results = {}
+    for epsilon in all_results_flatten:
+        final_results[str(epsilon)] = {}
+        for n in all_results_flatten[epsilon]:
+            param, error_rate = utils.get_most_common(all_results_flatten[epsilon][n]['parameters'], all_results_flatten[epsilon][n]['error_rate'])
+            
+            final_results[str(epsilon)][str(n)] = {}
+            final_results[str(epsilon)][str(n)]['parameters'] = param
+            final_results[str(epsilon)][str(n)]['error_rate'] = error_rate
+#%%        
     
+    # the json has the key epsilon, numSamples, and value: learning_rate, batch_size, weight_decay
+    json_string = 'parameters.json'
+    with open(json_string, 'w') as f:
+        json.dump(final_results, f)
+    print('Optimal parameter saved in {}'.format(json_string))
+        
+
     

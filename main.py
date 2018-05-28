@@ -7,7 +7,6 @@ Created on Sat May 26 18:30:51 2018
 import numpy as np
 import json
 import time
-import re
 from multiprocessing import Pool
 from sklearn import random_projection
 from sklearn.utils import shuffle
@@ -49,11 +48,10 @@ def sgd(all_input_params):
                 results[epsilon][n]['noise'] = []
             
             weights = np.array([0.0 for i in range(num_dimensions)])
-            param_key = (epsilon, n)
             # param is a list which has the order -> [learning_rate, batch_size, weight_decay]
-            learning_rate = parameters[param_key]['parameters'][0]
-            batch_size  = parameters[param_key]['parameters'][1]
-            weight_decay = parameters[param_key]['parameters'][2]
+            learning_rate = parameters[epsilon][n]['parameters'][0]
+            batch_size  = parameters[epsilon][n]['parameters'][1]
+            weight_decay = parameters[epsilon][n]['parameters'][2]
             if n != amount_in_interval[-1]:
                 for i in range(epochs):
                     # shuffle the data so the minibatch takes different data in each epoch
@@ -112,20 +110,20 @@ def sgd(all_input_params):
                         objective_info[epsilon]['num_points'].append(j+batch_size)
                         results[epsilon][n]['noise'] += noise.tolist()
                     
-                    
-                # now we predict with the trained weights, using logistic regression
-                num_correct = 0
-                avg_error = 0
-                for i in range(len(y_test)):
-                    if y_test[i] == utils.sigmoid_prediction(X_test[i], weights):
-                        num_correct += 1
-                avg_error = num_correct/len(y_test)
-                
-                #!! 
-                results[epsilon][n]['error_rate'] = avg_error
-                results[epsilon][n]['noise_magnitude'] = sum(abs(noise)) 
-                    
             
+            # now we predict with the trained weights, using logistic regression
+            num_correct = 0
+            avg_error = 0
+            for i in range(len(y_test)):
+                if y_test[i] == utils.sigmoid_prediction(X_test[i], weights):
+                    num_correct += 1
+            avg_error = num_correct/len(y_test)
+            
+
+            results[epsilon][n]['error_rate'] = 1 - avg_error
+            results[epsilon][n]['noise_magnitude'] = sum(abs(noise)) 
+                    
+    
     return (results, objective_info)
 
 
@@ -194,7 +192,7 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_splits = 1
+    num_splits = 3
     num_samples = len(y)
     amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
@@ -203,16 +201,34 @@ if __name__ == '__main__':
     with open('parameters.JSON') as json_data:
         parameters = json.load(json_data)
     
-    # change the string tuple keys to tuples
-    param_keys = list(parameters.keys())
-    for key in param_keys:
+    # change the keys from string to numbers
+    param_keys = parameters
+    for epsilon in list(param_keys):
         try:
-            new_key = eval(key)
+            new_epsilon = eval(epsilon)
         except:
-            # we know that eval dose not work on inf
-            n = int(re.findall(r'\d+',key)[0])
-            new_key = (float('Inf'), n)
-        parameters[new_key] = parameters.pop(key)
+            # eval dose not recognize inf
+            new_epsilon = float('Inf')
+        parameters[new_epsilon] = {}
+        n_keys = parameters[epsilon] 
+        for n in list(n_keys):
+            new_n = eval(n)
+            parameters[new_epsilon][new_n] = parameters[epsilon][n]
+            del parameters[epsilon][n]
+        del parameters[epsilon]
+    
+# =============================================================================
+#     # change the string tuple keys to tuples
+#     param_keys = list(parameters.keys())
+#     for key in param_keys:
+#         try:
+#             new_key = eval(key)
+#         except:
+#             # we know that eval dose not work on inf
+#             n = int(re.findall(r'\d+',key)[0])
+#             new_key = (float('Inf'), n)
+#         parameters[new_key] = parameters.pop(key)
+# =============================================================================
 
         
     
@@ -242,25 +258,27 @@ if __name__ == '__main__':
     for result in results:
         for epsilon in result:
             epsilon_key = str(epsilon) # json wants its key as string 
-            if epsilon not in results_flatten:
+            if epsilon_key not in results_flatten:
                 results_flatten[epsilon_key] = {}
             for n in result[epsilon]:
                 n_key = str(n) # json wants its key as string 
-                if n not in results_flatten[epsilon_key]:
+                if n_key not in results_flatten[epsilon_key]:
+                    print(n_key, epsilon_key)
                     results_flatten[epsilon_key][n_key] = {}
                     results_flatten[epsilon_key][n_key]['error_rate'] = [result[epsilon][n]['error_rate']]
                     results_flatten[epsilon_key][n_key]['noise'] = result[epsilon][n]['noise']
                     results_flatten[epsilon_key][n_key]['noise_magnitude'] = [result[epsilon][n]['noise_magnitude']]
                 else:
+                    print('*****yoyo*******')
                     results_flatten[epsilon_key][n_key]['error_rate'].append(result[epsilon][n]['error_rate'])
                     results_flatten[epsilon_key][n_key]['noise'] += result[epsilon][n]['noise']
                     results_flatten[epsilon_key][n_key]['noise_magnitude'].append(result[epsilon][n]['noise_magnitude'])
         
-        # save the data as json and use it in the plot_results.py file
-        file_name = 'results.json'
-        with open(file_name, 'w') as f:
-            json.dump(results_flatten, f)
-        print('error rate and niose results saved in: {}'.format(file_name))
+    # save the data as json and use it in the plot_results.py file
+    file_name = 'results.json'
+    with open(file_name, 'w') as f:
+        json.dump(results_flatten, f)
+    print('error rate and niose results saved in: {}'.format(file_name))
         
 #%%
         objective_info_flatten ={}
@@ -270,7 +288,7 @@ if __name__ == '__main__':
                     objective_info_flatten[epsilon] = {'objective': [], 'gradient': [], 'num_points': []}
                 for j in range(len(objective_info[epsilon]['objective'])):
                     # we introduce list of list inside the objective_info_flatten
-                    # each list is for iteration number, then later it is possible to
+                    # each list is for iteration number (num data points), then later it is possible to
                     # calculate variance and mean for each iteration count
                     if i == 0:
                         

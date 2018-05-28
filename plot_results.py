@@ -29,6 +29,21 @@ num_simulations = 2
 t_critical = stats.t.ppf(q = 0.95, df = num_simulations - 1)
 
 
+get_label = {
+                '0.0005':'$\epsilon$ = 0.0005',
+                '0.001': '$\epsilon$ = 0.001',
+                '0.005' : '$\epsilon$ = 0.005',
+                '0.01': '$\epsilon$ = 0.01',
+                '0.05': '$\epsilon$ = 0.05',
+                '0.1': '$\epsilon$ = 0.1',
+                '0.5': '$\epsilon$ = 0.5',
+                '1': '$\epsilon$ = 1',
+                '10': '$\epsilon$ = 10',
+                'inf': 'OPtimal..'
+        }
+
+
+#%%
 fig = plt.figure(figsize=(7, 4))
 ax = plt.subplot(111)
 # look at the error rate    
@@ -47,11 +62,16 @@ for epsilon in results:
         
         error_rates_mean.append(error_rate_mean)
         limits.append(limit)
-        
-    plt.plot(num_points, error_rates_mean, 'o')
+    plt.errorbar(num_points, error_rates_mean, yerr = limits, label =get_label[epsilon] ,  fmt = '--o', capsize = 2, markersize = 5)   
+    #plt.plot(num_points, error_rates_mean, 'o--')
+plt.legend(bbox_to_anchor=(1.05, 0.85), loc=2, borderaxespad=0.)
+box = ax.get_postion()
+ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
+plt.ylabel('Error rate')
+plt.xlabel('Amount of training data [N]')
 plt.show()
 
-
+#%%
 # look at the size of the error bar
 
 
@@ -74,3 +94,10 @@ plt.show()
 
 
 # look at the convergance of the objective function
+for epsilon in objective_info:
+    # hversu margir punktar gerdu tetta...
+    
+    
+# look at the gradient
+for epsilon in objective_info:
+    gradient = ...
