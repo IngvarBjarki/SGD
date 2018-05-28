@@ -110,5 +110,6 @@ def project_onto_unitball(X):
     for i in range(len(X)):
         X[i] = X[i] / max(1, np.linalg.norm(X[i], ord = 2))
     return X
-    
+
+
 
