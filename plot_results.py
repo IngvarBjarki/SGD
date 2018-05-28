@@ -65,7 +65,7 @@ for epsilon in results:
     plt.errorbar(num_points, error_rates_mean, yerr = limits, label =get_label[epsilon] ,  fmt = '--o', capsize = 2, markersize = 5)   
     #plt.plot(num_points, error_rates_mean, 'o--')
 plt.legend(bbox_to_anchor=(1.05, 0.85), loc=2, borderaxespad=0.)
-box = ax.get_postion()
+box = ax.get_position()
 ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
 plt.ylabel('Error rate')
 plt.xlabel('Amount of training data [N]')

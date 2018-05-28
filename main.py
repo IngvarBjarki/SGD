@@ -192,7 +192,7 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_splits = 3
+    num_splits = 5
     num_samples = len(y)
     amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
@@ -263,13 +263,11 @@ if __name__ == '__main__':
             for n in result[epsilon]:
                 n_key = str(n) # json wants its key as string 
                 if n_key not in results_flatten[epsilon_key]:
-                    print(n_key, epsilon_key)
                     results_flatten[epsilon_key][n_key] = {}
                     results_flatten[epsilon_key][n_key]['error_rate'] = [result[epsilon][n]['error_rate']]
                     results_flatten[epsilon_key][n_key]['noise'] = result[epsilon][n]['noise']
                     results_flatten[epsilon_key][n_key]['noise_magnitude'] = [result[epsilon][n]['noise_magnitude']]
                 else:
-                    print('*****yoyo*******')
                     results_flatten[epsilon_key][n_key]['error_rate'].append(result[epsilon][n]['error_rate'])
                     results_flatten[epsilon_key][n_key]['noise'] += result[epsilon][n]['noise']
                     results_flatten[epsilon_key][n_key]['noise_magnitude'].append(result[epsilon][n]['noise_magnitude'])
@@ -281,30 +279,30 @@ if __name__ == '__main__':
     print('error rate and niose results saved in: {}'.format(file_name))
         
 #%%
-        objective_info_flatten ={}
-        for i, objective_info in enumerate(objective_infos):
-            for  epsilon in objective_info:
-                if epsilon not in objective_info_flatten:
-                    objective_info_flatten[epsilon] = {'objective': [], 'gradient': [], 'num_points': []}
-                for j in range(len(objective_info[epsilon]['objective'])):
-                    # we introduce list of list inside the objective_info_flatten
-                    # each list is for iteration number (num data points), then later it is possible to
-                    # calculate variance and mean for each iteration count
-                    if i == 0:
-                        
-                        # first time trough the loop
-                        objective_info_flatten[epsilon]['objective'].append([objective_info[epsilon]['objective'][j]])
-                        objective_info_flatten[epsilon]['gradient'].append([objective_info[epsilon]['gradient'][j]])
-                        objective_info_flatten[epsilon]['num_points'].append(objective_info[epsilon]['num_points'][j])
-                    else:
-                        objective_info_flatten[epsilon]['objective'][j].append(objective_info[epsilon]['objective'][j])
-                        objective_info_flatten[epsilon]['gradient'][j].append(objective_info[epsilon]['gradient'][j])
-                
+    objective_info_flatten ={}
+    for i, objective_info in enumerate(objective_infos):
+        for  epsilon in objective_info:
+            if epsilon not in objective_info_flatten:
+                objective_info_flatten[epsilon] = {'objective': [], 'gradient': [], 'num_points': []}
+            for j in range(len(objective_info[epsilon]['objective'])):
+                # we introduce list of list inside the objective_info_flatten
+                # each list is for iteration number (num data points), then later it is possible to
+                # calculate variance and mean for each iteration count
+                if i == 0:
+                    
+                    # first time trough the loop
+                    objective_info_flatten[epsilon]['objective'].append([objective_info[epsilon]['objective'][j]])
+                    objective_info_flatten[epsilon]['gradient'].append([objective_info[epsilon]['gradient'][j]])
+                    objective_info_flatten[epsilon]['num_points'].append(objective_info[epsilon]['num_points'][j])
+                else:
+                    objective_info_flatten[epsilon]['objective'][j].append(objective_info[epsilon]['objective'][j])
+                    objective_info_flatten[epsilon]['gradient'][j].append(objective_info[epsilon]['gradient'][j])
             
-        # save as json nad use it in plot_results.py file
-        file_name = 'objective_info.json'
-        with open(file_name, 'w') as f:
-            json.dump(objective_info_flatten, f)
-        print('information on gradient and objective {}'.format(file_name))
+            
+    # save as json nad use it in plot_results.py file
+    file_name = 'objective_info.json'
+    with open(file_name, 'w') as f:
+        json.dump(objective_info_flatten, f)
+    print('information on gradient and objective {}'.format(file_name))
             
                 

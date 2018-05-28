@@ -124,7 +124,7 @@ def sgd(all_input_params):
             
 #%%
 if __name__ == '__main__':
-    debugging = True
+    debugging = False
     if debugging:
         # get the data and preprocess it
         digits = load_digits()
@@ -183,14 +183,16 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_splits = 3 #50
+    num_splits = 50
     num_samples = len(y)
     amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
     if debugging:
         args = (X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
-        all_results = [sgd(args), sgd(args)]
+        args2 = (X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
+        args3 = (X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
+        all_results = [sgd(args), sgd(args2), sgd(args3)]
     else:
         # we run mulitiprocessing when we are not debuging
         num_processes = 24
