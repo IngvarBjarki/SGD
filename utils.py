@@ -42,6 +42,16 @@ def get_min_index(error_rate, batch_sizes):
     return all_min_idx[best_of_ties]
 
 
+def get_objective(X, y, w, batch_size):
+    # X is a np matrix -- predictors
+    # y is a np array -- target
+    # w is a np array - the weights of the trained model
+    objective = 0
+    for i in range(len(y)):
+        objective += np.log(1 + np.exp(-y[i] * w.T * X[i]))
+    return objective / batch_size
+
+
 def loss_derivative(X, y, w):
     # X, y, w  are np.arrays
     

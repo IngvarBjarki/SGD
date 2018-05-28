@@ -48,15 +48,17 @@ def sgd(all_input_params):
     weight_decays = [10**(-2), 10**(-5), 10**(-10), 10**(-15)]
     
     parameters = {'learning_rate':[], 'batch_size':[], 'weight_decay':[], 'error_rate':[]}
-    all_optimal_results = []
-    
+    optimal_results = {}
     
     
     kf = KFold(n_splits=k_splits)
     for epsilon in epsilons:
+        if epsilon not in optimal_results:
+            optimal_results[epsilon] = {}
         for n in amount_in_interval:
             # lets do grid search of the parameters for each epsilon
-            optimal_results = {'parameters': [], 'error_rate':[]}
+            if n not in optimal_results[epsilon]:
+                optimal_results[epsilon][n] = {}
             for weight_decay in weight_decays:
                 for learning_rate in learning_rates:
                     for batch_size in num_in_batch:
@@ -107,22 +109,22 @@ def sgd(all_input_params):
             optimal_index = utils.get_min_index(parameters['error_rate'], parameters['batch_size'])
 
             
-            optimal_results['parameters'].append((parameters['learning_rate'][optimal_index]\
-                              , parameters['batch_size'][optimal_index], parameters['weight_decay'][optimal_index]))
-            optimal_results['error_rate'].append(parameters['error_rate'][optimal_index])
+            optimal_results[epsilon][n]['parameters'] = (parameters['learning_rate'][optimal_index]\
+                              , parameters['batch_size'][optimal_index], parameters['weight_decay'][optimal_index])
+            
+            optimal_results[epsilon][n]['error_rate'] = parameters['error_rate'][optimal_index]
             # clear parameters for next run
             parameters = {'learning_rate':[], 'batch_size':[], 'weight_decay':[], 'error_rate':[]}
             
-            print('tuning for epsilon: {} done'.format(epsilon))
+        print('tuning for epsilon: {} done'.format(epsilon))
             
-            # save the optimal parameters for each epsilon
-        all_optimal_results.append((epsilon, optimal_results))
+        
             
-    return all_optimal_results
+    return optimal_results
             
 #%%
 if __name__ == '__main__':
-    debugging = False
+    debugging = True
     if debugging:
         # get the data and preprocess it
         digits = load_digits()
@@ -181,14 +183,14 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_splits = 50
+    num_splits = 3 #50
     num_samples = len(y)
     amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
     if debugging:
         args = (X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
-        all_results = [sgd(args)]
+        all_results = [sgd(args), sgd(args)]
     else:
         # we run mulitiprocessing when we are not debuging
         num_processes = 24
@@ -201,44 +203,75 @@ if __name__ == '__main__':
         p.close()
         p.join()
         print('multiporcessing finsihed, time: {}'.format(time.time() - t1))
-    # nafnid a splitinu er key
+
+#%%
     all_results_flatten = {} 
     for result in all_results:
-        for i, values in enumerate(result):
-            epsilon = values[0]
-            parameters = values[1]['parameters']
-            print('parameters ', parameters )
-            error_rate = values[1]['error_rate']
-            for i in range(len(parameters)):
-                key = (epsilon, amount_of_data_in_interval[i])
-                if key not in all_results_flatten:
-                    all_results_flatten[key] = {}
-                    all_results_flatten[key]['parameters'] = [parameters[i]]
-                    all_results_flatten[key]['error_rate'] = [error_rate[i]]
+        for epsilon in result:
+            if epsilon not in all_results_flatten:
+                all_results_flatten[epsilon] = {}
+            for n in result[epsilon]:
+                if n not in all_results_flatten[epsilon]:
+                    all_results_flatten[epsilon][n] = {}
+                    all_results_flatten[epsilon][n]['parameters'] = [result[epsilon][n]['parameters']]
+                    all_results_flatten[epsilon][n]['error_rate'] = [result[epsilon][n]['error_rate']]
                 else:
-                    all_results_flatten[key]['parameters'].append(parameters[i])
-                    all_results_flatten[key]['error_rate'].append(error_rate[i])
-            
-            print('***********************************')
-#%%            
-    # find which parameter is most common
-    final_results = {}
-    for key in all_results_flatten:
-        param, error_rate = utils.get_most_common(all_results_flatten[key]['parameters'], all_results_flatten[key]['error_rate'])
-        key = str(key)
-        final_results[key] = {}
-        final_results[key]['parameters'] = param
-        final_results[key]['error_rate'] = error_rate
-        
-    
-    # the json has the key epsilon, numSamples, and value: learning_rate, batch_size, weight_decay
-    json_string = 'parameters.json'
-    with open(json_string, 'w') as f:
-        json.dump(final_results, f)
-    print('Optimal parameter saved in {}'.format(json_string))
-        
-    # maybe we would like to get the batcheses which are most often used.
-    
+                    params = result[epsilon][n]['parameters']
+                    error_rate = result[epsilon][n]['error_rate']
+                    all_results_flatten[epsilon][n]['parameters'].append(params)
+                    all_results_flatten[epsilon][n]['error_rate'].append(error_rate)
+# =============================================================================
+# #%%
+#     # nafnid a splitinu er key
+#     all_results_flatten = {} 
+#     for result in all_results:
+#         for i, values in enumerate(result):
+#             epsilon = values[0]
+#             parameters = values[1]['parameters']
+#             print('parameters ', parameters )
+#             error_rate = values[1]['error_rate']
+#             for i in range(len(parameters)):
+#                 key = (epsilon, amount_of_data_in_interval[i])
+#                 if key not in all_results_flatten:
+#                     all_results_flatten[key] = {}
+#                     all_results_flatten[key]['parameters'] = [parameters[i]]
+#                     all_results_flatten[key]['error_rate'] = [error_rate[i]]
+#                 else:
+#                     all_results_flatten[key]['parameters'].append(parameters[i])
+#                     all_results_flatten[key]['error_rate'].append(error_rate[i])
+#             
+#             print('***********************************')
+# #%%            
+#     # find which parameter is most common
+#     final_results = {}
+#     for key in all_results_flatten:
+#         param, error_rate = utils.get_most_common(all_results_flatten[key]['parameters'], all_results_flatten[key]['error_rate'])
+#         key = str(key)
+#         final_results[key] = {}
+#         final_results[key]['parameters'] = param
+#         final_results[key]['error_rate'] = error_rate
+# #%%
+# 
+#     final_results = {}
+#     for epsilon in all_results_flatten:
+#         final_results[str(epsilon)] = {}
+#         for n in all_results_flatten[epsilon]:
+#             param, error_rate = utils.get_most_common(all_results_flatten[epsilon][n]['parameters'], all_results_flatten[epsilon][n]['error_rate'])
+#             
+#             final_results[str(epsilon)][str(n)] = {}
+#             final_results[str(epsilon)][str(n)]['parameters'] = param
+#             final_results[str(epsilon)][str(n)]['error_rate'] = error_rate
+# #%%        
+#     
+#     # the json has the key epsilon, numSamples, and value: learning_rate, batch_size, weight_decay
+#     json_string = 'parameters.json'
+#     with open(json_string, 'w') as f:
+#         json.dump(final_results, f)
+#     print('Optimal parameter saved in {}'.format(json_string))
+#         
+#     # maybe we would like to get the batcheses which are most often used.
+#     
+# =============================================================================
     
 #%%
     
