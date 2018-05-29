@@ -183,6 +183,7 @@ if __name__ == '__main__':
     X[:,1:] = X_without_bias
     
     
+    
     # split the data upp so to get the learning rate
     num_samples = len(y)
     if small_intervals_in_begining:
