@@ -267,7 +267,7 @@ if __name__ == '__main__':
     else:
         # we run mulitiprocessing when we are not debuging
         num_processes = 24
-        args = [(X_train, y_train, X_test, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val, parameters)) for i in range(num_processes)] 
+        args = [(X_train, y_train, X_test, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters) for i in range(num_processes)] 
         t1 = time.time()
         p = Pool(num_processes)
     
