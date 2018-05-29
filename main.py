@@ -159,20 +159,20 @@ if __name__ == '__main__':
         
     else:
         num1, num2 = 4, 9
-        y, X_without_bias = [], []
+        y_train, X_train_without_bias = [], []
         with open('mnist_train.csv') as l:
             for i, line in enumerate(l):
                 line = line.split(',')
                 label = int(line[0])
                 if label == num1 or label == num2:
                     features = [float(i) for i in line[1:]]
-                    y.append(label)
-                    X_without_bias.append(features)
-        y = np.asarray(y)
-        X_without_bias = np.asarray(X_without_bias)
+                    y_train.append(label)
+                    X_train_without_bias.append(features)
+        y_train = np.asarray(y_train)
+        X_train_without_bias = np.asarray(X_train_without_bias)
         
-        y[y == num1] = -1
-        y[y == num2] = 1
+        y_train[y_train == num1] = -1
+        y_train[y_train == num2] = 1
         
         y_test, X_test_without_bias = [], []
         with open('mnist_test.csv') as l:
@@ -220,7 +220,7 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_samples = len(y)
+    num_samples = len(y_train)
     if small_intervals_in_begining:
         num_splits = 50
         samples_to_check = 1000
