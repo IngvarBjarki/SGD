@@ -192,7 +192,7 @@ if __name__ == '__main__':
     
     # standardize the data
     scaler = StandardScaler()
-    scaler.fit(X_without_bias)
+    scaler.fit(X_train_without_bias)
     X_train_without_bias = scaler.transform(X_train_without_bias)
     
     scaler.fit(X_test_without_bias)
