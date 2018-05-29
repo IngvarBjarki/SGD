@@ -39,8 +39,8 @@ get_label = {
                 '0.5': '$\epsilon$ = 0.5',
                 '1': '$\epsilon$ = 1',
                 '10': '$\epsilon$ = 10',
-                'inf': 'OPtimal..',
-                'Infinity': 'OPtimal'
+                'inf': 'Without DP',
+                'Infinity': 'Without DP'
         }
 
 

@@ -272,7 +272,8 @@ if __name__ == '__main__':
         p = Pool(num_processes)
     
         all_results = p.map(sgd, args)# [sgd(X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))] 
-    
+        results, objective_infos = zip(*all_results)
+        
         p.close()
         p.join()
         print('multiporcessing finsihed, time: {}'.format(time.time() - t1))
