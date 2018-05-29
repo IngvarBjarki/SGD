@@ -130,7 +130,8 @@ def sgd(all_input_params):
 
 
 if __name__ == '__main__':
-    debugging = True
+    debugging = False
+    small_intervals_in_begining = True
     if debugging:
         # get the data and preprocess it
         digits = load_digits()
@@ -219,13 +220,24 @@ if __name__ == '__main__':
     
     
     # split the data upp so to get the learning rate
-    num_splits = 5
     num_samples = len(y)
-    amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
+    if small_intervals_in_begining:
+        num_splits = 50
+        samples_to_check = 1000
+        amount_of_data_in_interval = np.cumsum([int(samples_to_check / num_splits) for i in range(num_splits - 5)]).tolist()
+        amount_of_data_in_interval += [2000, 4000, 6000, 8000, num_samples]
+    else:
+        num_splits = 50
+        amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
+    
+    if small_intervals_in_begining:
+        json_file = 'parameters_tight_begining.json'
+    else:
+        json_file = 'parameters.JSON'
     # get the parameters from training
-    with open('parameters.JSON') as json_data:
+    with open(json_file) as json_data:
         parameters = json.load(json_data)
     
     # change the keys from string to numbers
