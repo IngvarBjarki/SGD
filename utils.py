@@ -49,24 +49,30 @@ def get_objective(X, y, w, batch_size):
     objective = 0
     for i in range(len(y)):
         objective += np.log(1 + np.exp(-y[i] * w.T * X[i]))
+
     return objective / batch_size
 
 
 def loss_derivative(X, y, w):
     # X, y, w  are np.arrays
-    
+    #np.seterr(invalid='raise')
     # the cross entropy function is the loss function in this case
     # with taregts -1 and 1
     # see http://cseweb.ucsd.edu/~kamalika/pubs/scs13.pdf 
     
     # we use gradient clipping to ensure that the gradient is less or equal than 1
     # we clipp the gradient by the l2 norm
-    
-    result = 0
+    abs_max_value_for_exp = 709.7 # everythin bigger results in in inf -- which give numerical problems
+    abs_max_value_for_exp = np.exp(709.7)
+    #print('weights',w.T )
+    result = np.array([0.0 for i in range(len(X[0]))])
     for i in range(len(y)):
-        derivative = -(X[i] * y[i] /(np.exp(y[i] * w.T * X[i] ) + 1))
+        exponenet = np.clip(np.exp(y[i] * w.T * X[i] ), 0.0, abs_max_value_for_exp) # ensure we dont get infs
+        derivative = -(X[i] * y[i] /(exponenet + 1))
         norm_clipper = max(1, np.linalg.norm(derivative, ord = 2))
+     
         result += derivative / norm_clipper
+        
     return result #sum([-(X[i] * y[i] /(np.exp(y[i] * w.T * X[i] ) + 1)) / max(1, np.linalg.norm((X[i] * y[i] /(np.exp(y[i] * w.T * X[i] ) + 1)), ord = 2)) for i in range(len(y))])
 
 def sigmoid_prediction(X, w):

@@ -25,7 +25,7 @@ with open(r"C:\Users\helga\OneDrive\Documents\sgd\objective_info.json") as f:
     objective_info = json.load(f)
     
     
-num_simulations = 2
+num_simulations = 4
 t_critical = stats.t.ppf(q = 0.95, df = num_simulations - 1)
 
 #!! s;mrama optimal!!!!!!!
@@ -68,8 +68,8 @@ for i in range(2):
             error_rates_mean.append(error_rate_mean)
             limits.append(limit)
         all_limits.append((epsilon, list(limits)))
-        plt.errorbar(num_points, error_rates_mean, yerr = limits, label =get_label[epsilon] ,  fmt = '--o', capsize = 2, markersize = 5)   
-        #plt.plot(num_points, error_rates_mean, 'o--')
+        #plt.errorbar(num_points, error_rates_mean, yerr = limits, label =get_label[epsilon] ,  fmt = '--o', capsize = 2, markersize = 5)   
+        plt.plot(num_points, error_rates_mean, 'o--', label =get_label[epsilon])
     plt.legend(bbox_to_anchor=(1.05, 0.85), loc=2, borderaxespad=0.)
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
@@ -191,7 +191,8 @@ for i in range(2):
     fig = plt.figure(figsize=(7, 4))
     ax = plt.subplot(111)
     for epsilon, limit in all_limits:
-        plt.plot(limit, '*--', label=get_label[epsilon])
+        num_points = objective_info[epsilon]['num_points']
+        plt.plot(num_points, limit, '*--', label=get_label[epsilon])
     plt.legend(bbox_to_anchor=(1.05, 0.85), loc=2, borderaxespad=0.)
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
@@ -229,9 +230,9 @@ for i in range(2):
     plt.xlabel('Amount of training data [N]')
     if i == 1:
         plt.yscale('log')
-        plt.ylabel('log(Objective value)')
+        plt.ylabel('log(Gradient)')
     else:
-        plt.ylabel('Objective value')
+        plt.ylabel('gradient')
     plt.show()
     
     print('look at CI')
@@ -239,7 +240,8 @@ for i in range(2):
     fig = plt.figure(figsize=(7, 4))
     ax = plt.subplot(111)
     for epsilon, limit in all_limits:
-        plt.plot(limit, '*--', label=get_label[epsilon])
+        num_points = objective_info[epsilon]['num_points']
+        plt.plot(num_points, limit, '*--', label=get_label[epsilon])
     plt.legend(bbox_to_anchor=(1.05, 0.85), loc=2, borderaxespad=0.)
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])

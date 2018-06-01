@@ -14,6 +14,7 @@ from sklearn.utils import shuffle
 from sklearn.datasets import load_digits
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
 
 # my libraries
 import utils
@@ -25,12 +26,19 @@ import utils
     
 
 def sgd(all_input_params):
-    X, y, amount_in_interval, random_state = all_input_params
+    X_without_bias, y, amount_in_interval, random_state = all_input_params
     # X are the predictors, come as np array
     # y are the targets, come as np array
     # amount_in_interval is the number of samples used to geneerate learning curve
     
-   
+    # do the random projection as they do in the paper -- second paper
+    transformer = random_projection.GaussianRandomProjection(n_components = 50)
+    X_without_bias = transformer.fit_transform(X_without_bias)
+    
+    # we add bias term in front -- done for the gradient decent
+    records, attributes = np.shape(X_without_bias)
+    X = np.ones((records, attributes + 1))
+    X[:,1:] = X_without_bias
     
     # multiprocessing dose not do different seed, so we take a random number to start different seeds
     np.random.seed(random_state)
@@ -39,15 +47,18 @@ def sgd(all_input_params):
     X, y = shuffle(X, y)
     
     num_dimensions = len(X[0])
-    num_in_batch = [1, 2, 5, 10, 50, 75, 100, 150, 200]
+    num_in_batch = [1, 2, 5, 10, 50, 75, 100, 150, 200, 250]
     epochs = 1
     k_splits = 5
-    learning_rates = [0.0001,  0.001,  0.01, 0.1, 1, 3]
+    # make the learning rates in the begining to save calculation
+    #learning_rates = [1]#[0.0001,  0.001,  0.01, 0.1, 1, 3]
+    #!! b;tta epsilon ini list copmhrehnss...
+    learning_rates = [1/np.sqrt(t + 1) for i in range(epochs) for t in range(amount_in_interval[-1])]
     epsilons = [0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 10, float('Inf')] # inf makes the noise go to zero -- equal to having no noise
     #epsilon = 200
-    weight_decays = [10**(-2), 10**(-5), 10**(-10), 10**(-15)]
+    weight_decays = [ 10**(-1), 10**(-2), 10**(-5), 10**(-8), 10**(-11)]
     
-    parameters = {'learning_rate':[], 'batch_size':[], 'weight_decay':[], 'error_rate':[]}
+    parameters = {'batch_size':[], 'weight_decay':[], 'error_rate':[]}
     optimal_results = {}
     
     
@@ -60,46 +71,47 @@ def sgd(all_input_params):
             if n not in optimal_results[epsilon]:
                 optimal_results[epsilon][n] = {}
             for weight_decay in weight_decays:
-                for learning_rate in learning_rates:
-                    for batch_size in num_in_batch:
-                        avg_error = 0
-                        for train_index, validation_index in kf.split(X[:n]):
-                            X_train, y_train = X[train_index], y[train_index]
-                            X_validation, y_validation = X[validation_index], y[validation_index]
-                            weights = np.array([0.0 for i in range(num_dimensions)])
-                            for i in range(epochs):
-                                # shuffle the data so the minibatch takes different data in each epoch
-                                X_train, y_train = shuffle(X_train, y_train)
-                                for j in range(0, len(y_train), batch_size):
-                                    X_batch = X_train[j:j+batch_size]
-                                    y_batch = y_train[j:j+batch_size]
+                for batch_size in num_in_batch:
+                    avg_error = 0
+                    for train_index, validation_index in kf.split(X[:n]):
+                        X_train, y_train = X[train_index], y[train_index]
+                        X_validation, y_validation = X[validation_index], y[validation_index]
+                        weights = np.array([0.0 for i in range(num_dimensions)])
+                        t = 0
+                        for i in range(epochs):
+                            # shuffle the data so the minibatch takes different data in each epoch
+                            X_train, y_train = shuffle(X_train, y_train)
+                            
+                            for j in range(0, len(y_train), batch_size):
+                                X_batch = X_train[j:j+batch_size]
+                                y_batch = y_train[j:j+batch_size]
+                            
+                                # claculate the derative of the l2 norm of the weights 
+                                l2_derivative = sum(weights)
                                 
-                                    # claculate the derative of the l2 norm of the weights 
-                                    #l2 = np.linalg.norm(weights, ord = 2)
-                                    l2_derivative = sum(weights)
-                                    # get the noise for all dimensions
-                                    noise = utils.add_noise(num_dimensions, epsilon)
-                                    
+                                # get the noise for all dimensions
+                                noise = utils.add_noise(num_dimensions, epsilon)
                                 
-                                    # take a step towrads the optima
-                                    weights -= learning_rate *(weight_decay * l2_derivative  + utils.loss_derivative(X_batch, y_batch, weights) / batch_size + noise / batch_size) 
-                        
-                    
-                    
-                            # now we predict with the trained weights, using logistic regression
-                            num_correct = 0
-                            for i in range(len(y_validation)):
-                                if y_validation[i] == utils.sigmoid_prediction(X_validation[i], weights):
-                                    num_correct += 1
-                            avg_error += num_correct/len(y_validation)
-            
-                        avg_error /= k_splits
-                        parameters['error_rate'].append(1 - avg_error)
-                        parameters['learning_rate'].append(learning_rate)
-                        parameters['batch_size'].append(batch_size)
-                        parameters['weight_decay'].append(weight_decay)
-                        #print('epoach..', flush = True)
-                        #print('{} out of {} correct with batch size {}, learning_rate: {}'.format(num_correct, len(y_validation), batch_size, learning_rate))
+                                learning_rate = learning_rates[t]
+                                # take a step towrads the optima
+                                weights -= learning_rate *(weight_decay * l2_derivative  + utils.loss_derivative(X_batch, y_batch, weights) / batch_size  + noise / batch_size) 
+                                
+                                t += 1
+                
+                
+                        # now we predict with the trained weights, using logistic regression
+                        num_correct = 0
+                        for i in range(len(y_validation)):
+                            if y_validation[i] == utils.sigmoid_prediction(X_validation[i], weights):
+                                num_correct += 1
+                        avg_error += num_correct/len(y_validation)
+        
+                    avg_error /= k_splits
+                    parameters['error_rate'].append(1 - avg_error)
+                    parameters['batch_size'].append(batch_size)
+                    parameters['weight_decay'].append(weight_decay)
+                    #print('epoach..', flush = True)
+                    #print('{} out of {} correct with batch size {}, learning_rate: {}'.format(num_correct, len(y_validation), batch_size, learning_rate))
             #print('=========================================================================')
             #print('error rate', parameters['error_rate'])
             #print('batch_size', parameters['batch_size'])        
@@ -109,12 +121,12 @@ def sgd(all_input_params):
             optimal_index = utils.get_min_index(parameters['error_rate'], parameters['batch_size'])
 
             
-            optimal_results[epsilon][n]['parameters'] = (parameters['learning_rate'][optimal_index]\
-                              , parameters['batch_size'][optimal_index], parameters['weight_decay'][optimal_index])
+            optimal_results[epsilon][n]['parameters'] = (parameters['batch_size'][optimal_index],\
+                           parameters['weight_decay'][optimal_index])
             
             optimal_results[epsilon][n]['error_rate'] = parameters['error_rate'][optimal_index]
             # clear parameters for next run
-            parameters = {'learning_rate':[], 'batch_size':[], 'weight_decay':[], 'error_rate':[]}
+            parameters = {'batch_size':[], 'weight_decay':[], 'error_rate':[]}
             
         print('tuning for epsilon: {} done'.format(epsilon))
             
@@ -124,8 +136,8 @@ def sgd(all_input_params):
             
 #%%
 if __name__ == '__main__':
-    debugging = False
-    small_intervals_in_begining = True
+    debugging = True
+    small_intervals_in_begining = False
     if debugging:
         # get the data and preprocess it
         digits = load_digits()
@@ -147,6 +159,9 @@ if __name__ == '__main__':
         # since we are classifying with the sign - we translate the y vector  to -1 to 1
         y[y == num1] = -1
         y[y == num2] = 1
+        # we dont need the test set know -- we do this so that methods
+        # with and without debugging are in harmony
+        X_without_bias , _, y, _ = train_test_split(X_without_bias , y)
         
     else:
         num1, num2 = 4, 9
@@ -172,39 +187,29 @@ if __name__ == '__main__':
     # project the data onto the unitball
     X_without_bias = utils.project_onto_unitball(X_without_bias)
     
-    
-    # do the random projection as they do in the paper -- second paper
-    transformer = random_projection.GaussianRandomProjection(n_components = 50)
-    X_without_bias = transformer.fit_transform(X_without_bias)
-    
-    # we add bias term in front -- done for the gradient decent
-    records, attributes = np.shape(X_without_bias)
-    X = np.ones((records, attributes + 1))
-    X[:,1:] = X_without_bias
-    
-    
+            
     
     # split the data upp so to get the learning rate
-    num_samples = len(y)
+    num_samples = len(y) #!!!
     if small_intervals_in_begining:
         num_splits = 50
         samples_to_check = 1000
         amount_of_data_in_interval = np.cumsum([int(samples_to_check / num_splits) for i in range(num_splits - 5)]).tolist()
         amount_of_data_in_interval += [2000, 4000, 6000, 8000, num_samples]
     else:
-        num_splits = 50
+        num_splits = 10#50
         amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
     if debugging:
-        args = (X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
-        args2 = (X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
-        args3 = (X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
+        args = (X_without_bias, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
+        args2 = (X_without_bias, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
+        args3 = (X_without_bias, y, amount_of_data_in_interval,  np.random.randint(max_integer_val))
         all_results = [sgd(args), sgd(args2), sgd(args3)]
     else:
         # we run mulitiprocessing when we are not debuging
         num_processes = 24
-        args = [(X, y, amount_of_data_in_interval,  np.random.randint(max_integer_val)) for i in range(num_processes)] 
+        args = [(X_without_bias, y, amount_of_data_in_interval,  np.random.randint(max_integer_val)) for i in range(num_processes)] 
         t1 = time.time()
         p = Pool(num_processes)
     

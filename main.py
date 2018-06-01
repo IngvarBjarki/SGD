@@ -21,10 +21,25 @@ import utils
 
 
 def sgd(all_input_params):
-    X_train, y_train, X_test, y_test, amount_in_interval, random_state, parameters = all_input_params
+    X_train_without_bias, y_train, X_test_without_bias, y_test, amount_in_interval, random_state, parameters = all_input_params
     # X are the predictors, come as np array
     # y are the targets, come as np array
     # amount_in_interval is the number of samples used to geneerate learning curve
+    
+    # do the random projection as they do in the paper -- second paper
+    transformer = random_projection.GaussianRandomProjection(n_components = 50)
+    transformer.fit(X_train_without_bias)
+    X_train_without_bias = transformer.transform(X_train_without_bias)
+    X_test_without_bias = transformer.transform(X_test_without_bias)
+    
+    # we add bias term in front -- done for the gradient decent
+    records, attributes = np.shape(X_train_without_bias)
+    X_train = np.ones((records, attributes + 1))
+    X_train[:,1:] = X_train_without_bias
+    
+    records, attributes = np.shape(X_test_without_bias)
+    X_test = np.ones((records, attributes + 1))
+    X_test[:,1:] = X_test_without_bias
     
     
     # multiprocessing dose not do different seed, so we take a random number to start different seeds
@@ -34,9 +49,9 @@ def sgd(all_input_params):
     X_train, y_train = shuffle(X_train, y_train)
     
     num_dimensions = len(X_train[0])
-    epochs = 1
+    epochs = 3
     epsilons = [0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 10, float('Inf')] # inf makes the noise go to zero -- equal to having no noise
-    
+    learning_rates = [1/np.sqrt(t + 1) for i in range(epochs) for t in range(amount_in_interval[-1])]
     results = {}
     objective_info = {}
     for epsilon in epsilons:
@@ -49,10 +64,11 @@ def sgd(all_input_params):
             
             weights = np.array([0.0 for i in range(num_dimensions)])
             # param is a list which has the order -> [learning_rate, batch_size, weight_decay]
-            learning_rate = parameters[epsilon][n]['parameters'][0]
-            batch_size  = parameters[epsilon][n]['parameters'][1]
-            weight_decay = parameters[epsilon][n]['parameters'][2]
+            #learning_rate = parameters[epsilon][n]['parameters'][0]
+            batch_size  = parameters[epsilon][n]['parameters'][0]
+            weight_decay = parameters[epsilon][n]['parameters'][1]
             if n != amount_in_interval[-1]:
+                t = 0
                 for i in range(epochs):
                     # shuffle the data so the minibatch takes different data in each epoch
                     X_train, y_train = shuffle(X_train, y_train)
@@ -69,11 +85,13 @@ def sgd(all_input_params):
                         # get the objective derivative value -- look at convergance
                         objective_derivative = weight_decay * l2_derivative  + utils.loss_derivative(X_batch, y_batch, weights) / batch_size + noise / batch_size
                         
+                        
                         # take a step towrads the optima
-                        weights -= learning_rate *(objective_derivative)
+                        weights -= learning_rates[t] *(objective_derivative)
                         
                         # keep all the noise added so we can investegate it's distribution
                         results[epsilon][n]['noise'] += noise.tolist()
+                        t += 1
             else:
 
                 # we want to investegate how the objective changes thorugh iterations only for
@@ -83,7 +101,13 @@ def sgd(all_input_params):
                     objective_info[epsilon]['objective'] = []
                     objective_info[epsilon]['gradient'] = []
                     objective_info[epsilon]['num_points'] = []
+                t = 0
                 for i in range(epochs):
+                    if objective_info[epsilon]['num_points']:
+                        points_from_last_epoch = objective_info[epsilon]['num_points'][-1]   
+                    else:
+                        points_from_last_epoch = 0
+                        
                     # shuffle the data so the minibatch takes different data in each epoch
                     X_train, y_train = shuffle(X_train, y_train)
                     for j in range(0, len(y_train), batch_size):
@@ -99,18 +123,24 @@ def sgd(all_input_params):
                         # get the objective value
                         objective = utils.get_objective(X_batch, y_batch, weights, batch_size)
                         
+                        
                         # get the objective derivative value -- look at convergance
                         objective_derivative = weight_decay * l2_derivative  + utils.loss_derivative(X_batch, y_batch, weights) / batch_size + noise / batch_size
                         
                         # take a step towrads the optima
-                        weights -= learning_rate *(objective_derivative)
+                        weights -= learning_rates[t] *(objective_derivative)
                         
                         objective_info[epsilon]['objective'].append(np.mean(objective))
                         objective_info[epsilon]['gradient'].append(np.mean(objective_derivative))
-                        objective_info[epsilon]['num_points'].append(j+batch_size)
+                     
+                        
+                        objective_info[epsilon]['num_points'].append(j+batch_size + points_from_last_epoch) # if we go to the next epoch we keep on couniting
                         results[epsilon][n]['noise'] += noise.tolist()
+                        t += 1
+                    
                     
             
+
             # now we predict with the trained weights, using logistic regression
             num_correct = 0
             avg_error = 0
@@ -119,9 +149,16 @@ def sgd(all_input_params):
                     num_correct += 1
             avg_error = num_correct/len(y_test)
             
-
             results[epsilon][n]['error_rate'] = 1 - avg_error
-            results[epsilon][n]['noise_magnitude'] = sum(abs(noise)) 
+            
+            
+            # take the last iteration of the noise and find its magnitude
+            # this is done to compare it to the wegiths to see how it influences
+            # the decision process
+            results[epsilon][n]['noise_magnitude'] = sum(abs(noise))
+            #results[epsilon][n]['weights'] = sum(abs(weights))
+
+            
                     
     
     return (results, objective_info)
@@ -130,8 +167,8 @@ def sgd(all_input_params):
 
 
 if __name__ == '__main__':
-    debugging = False
-    small_intervals_in_begining = True
+    debugging = True
+    small_intervals_in_begining = False
     if debugging:
         # get the data and preprocess it
         digits = load_digits()
@@ -201,31 +238,18 @@ if __name__ == '__main__':
     X_test_without_bias = utils.project_onto_unitball(X_test_without_bias)
     
     
-    # do the random projection as they do in the paper -- second paper
-    transformer = random_projection.GaussianRandomProjection(n_components = 50)
-    transformer.fit(X_train_without_bias)
-    X_train_without_bias = transformer.transform(X_train_without_bias)
-    X_test_without_bias = transformer.transform(X_test_without_bias)
-    
-    # we add bias term in front -- done for the gradient decent
-    records, attributes = np.shape(X_train_without_bias)
-    X_train = np.ones((records, attributes + 1))
-    X_train[:,1:] = X_train_without_bias
-    
-    records, attributes = np.shape(X_test_without_bias)
-    X_test = np.ones((records, attributes + 1))
-    X_test[:,1:] = X_test_without_bias
+
     
     
-    # split the data upp so to get the learning rate
-    num_samples = len(y_train)
+    # split the data upp so to get the learning curve
+    num_samples = len(y_train) 
     if small_intervals_in_begining:
         num_splits = 50
         samples_to_check = 1000
         amount_of_data_in_interval = np.cumsum([int(samples_to_check / num_splits) for i in range(num_splits - 5)]).tolist()
         amount_of_data_in_interval += [2000, 4000, 6000, 8000, num_samples]
     else:
-        num_splits = 50
+        num_splits = 10#50
         amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
@@ -259,15 +283,18 @@ if __name__ == '__main__':
     
     if debugging:
         
-        args = (X_train, y_train, X_test, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters)
-        args2 = (X_train, y_train, X_test, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters)
-        all_results = [sgd(args), sgd(args2)]
+        args = (X_train_without_bias, y_train, X_test_without_bias, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters)
+        args2 = (X_train_without_bias, y_train, X_test_without_bias, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters)
+        args3 = (X_train_without_bias, y_train, X_test_without_bias, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters)
+        args4 = (X_train_without_bias, y_train, X_test_without_bias, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters)
+        all_results = [sgd(args), sgd(args2), sgd(args3), sgd(args4)]
+        num_processes = len(all_results)
         results, objective_infos = zip(*all_results)
         
     else:
         # we run mulitiprocessing when we are not debuging
         num_processes = 24
-        args = [(X_train, y_train, X_test, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters) for i in range(num_processes)] 
+        args = [(X_train_without_bias, y_train, X_test_without_bias, y_test, amount_of_data_in_interval,  np.random.randint(max_integer_val), parameters) for i in range(num_processes)] 
         t1 = time.time()
         p = Pool(num_processes)
     
@@ -300,6 +327,7 @@ if __name__ == '__main__':
         
     # save the data as json and use it in the plot_results.py file
     file_name = 'results.json'
+    
     with open(file_name, 'w') as f:
         json.dump(results_flatten, f)
     print('error rate and niose results saved in: {}'.format(file_name))
