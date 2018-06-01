@@ -55,7 +55,6 @@ def get_objective(X, y, w, batch_size):
 
 def loss_derivative(X, y, w):
     # X, y, w  are np.arrays
-    #np.seterr(invalid='raise')
     # the cross entropy function is the loss function in this case
     # with taregts -1 and 1
     # see http://cseweb.ucsd.edu/~kamalika/pubs/scs13.pdf 

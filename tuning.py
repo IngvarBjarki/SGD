@@ -26,6 +26,7 @@ import utils
     
 
 def sgd(all_input_params):
+    t1 = time.time()
     X_without_bias, y, amount_in_interval, random_state = all_input_params
     # X are the predictors, come as np array
     # y are the targets, come as np array
@@ -50,12 +51,8 @@ def sgd(all_input_params):
     num_in_batch = [1, 2, 5, 10, 50, 75, 100, 150, 200, 250]
     epochs = 1
     k_splits = 5
-    # make the learning rates in the begining to save calculation
-    #learning_rates = [1]#[0.0001,  0.001,  0.01, 0.1, 1, 3]
-    #!! b;tta epsilon ini list copmhrehnss...
     learning_rates = [1/np.sqrt(t + 1) for i in range(epochs) for t in range(amount_in_interval[-1])]
     epsilons = [0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 10, float('Inf')] # inf makes the noise go to zero -- equal to having no noise
-    #epsilon = 200
     weight_decays = [ 10**(-1), 10**(-2), 10**(-5), 10**(-8), 10**(-11)]
     
     parameters = {'batch_size':[], 'weight_decay':[], 'error_rate':[]}
@@ -128,7 +125,7 @@ def sgd(all_input_params):
             # clear parameters for next run
             parameters = {'batch_size':[], 'weight_decay':[], 'error_rate':[]}
             
-        print('tuning for epsilon: {} done'.format(epsilon))
+        print('tuning for epsilon: {} done, time from start {}'.format(epsilon, time.time() - t1), flush = True)
             
         
             
@@ -197,7 +194,7 @@ if __name__ == '__main__':
         amount_of_data_in_interval = np.cumsum([int(samples_to_check / num_splits) for i in range(num_splits - 5)]).tolist()
         amount_of_data_in_interval += [2000, 4000, 6000, 8000, num_samples]
     else:
-        num_splits = 10#50
+        num_splits = 50
         amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
