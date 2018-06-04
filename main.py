@@ -141,6 +141,7 @@ def sgd(all_input_params):
                         #results[epsilon][n]['noise'] += noise.tolist()
                         t += 1
                     
+                    print('num_points', objective_info[epsilon]['num_points'], flush = True)
                     
             
 
@@ -258,6 +259,7 @@ if __name__ == '__main__':
         amount_of_data_in_interval += [2000, 4000, 6000, 8000, num_samples]
     else:
         amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
+        print('amount_of_data_in_interval', amount_of_data_in_interval)
     max_integer_val = np.iinfo(np.int32).max
     
     
