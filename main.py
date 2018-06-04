@@ -96,7 +96,7 @@ def sgd(all_input_params):
                         #results[epsilon][n]['noise'] += noise.tolist()
                         t += 1
             else:
-
+                print('n != amount_in_interval[-1] = {}, n {}, amount_in_interval[-1] {}'.format(n != amount_in_interval[-1], n, amount_in_interval[-1]))
                 # we want to investegate how the objective changes thorugh iterations only for
                 # the models which are trained on all the data
                 if epsilon not in objective_info:
@@ -113,6 +113,7 @@ def sgd(all_input_params):
                         
                     # shuffle the data so the minibatch takes different data in each epoch
                     X_train, y_train = shuffle(X_train[:int(n)], y_train[:int(n)])
+                    print(len(y_train ))
                     for j in range(0, len(y_train), batch_size):
                         X_batch = X_train[j:j+batch_size]
                         y_batch = y_train[j:j+batch_size]
