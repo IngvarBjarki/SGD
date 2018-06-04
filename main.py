@@ -175,7 +175,7 @@ def sgd(all_input_params):
 
 
 if __name__ == '__main__':
-    debugging = True
+    debugging = False
     small_intervals_in_begining = False
     if debugging:
         # get the data and preprocess it
