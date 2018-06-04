@@ -49,7 +49,7 @@ def sgd(all_input_params):
     X_train, y_train = shuffle(X_train, y_train)
     
     num_dimensions = len(X_train[0])
-    epochs = 3
+    epochs = 1
     epsilons = [0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 10, float('Inf')] # inf makes the noise go to zero -- equal to having no noise
     learning_rates = [1/np.sqrt(t + 1) for i in range(epochs) for t in range(amount_in_interval[-1])]
     results = {}
@@ -175,7 +175,7 @@ def sgd(all_input_params):
 
 
 if __name__ == '__main__':
-    debugging = False
+    debugging = True
     small_intervals_in_begining = False
     if debugging:
         # get the data and preprocess it
@@ -251,13 +251,12 @@ if __name__ == '__main__':
     
     # split the data upp so to get the learning curve
     num_samples = len(y_train) 
+    num_splits = 10#50
     if small_intervals_in_begining:
-        num_splits = 50
         samples_to_check = 1000
         amount_of_data_in_interval = np.cumsum([int(samples_to_check / num_splits) for i in range(num_splits - 5)]).tolist()
         amount_of_data_in_interval += [2000, 4000, 6000, 8000, num_samples]
     else:
-        num_splits = 50
         amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
