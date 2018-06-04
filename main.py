@@ -257,7 +257,7 @@ if __name__ == '__main__':
         amount_of_data_in_interval = np.cumsum([int(samples_to_check / num_splits) for i in range(num_splits - 5)]).tolist()
         amount_of_data_in_interval += [2000, 4000, 6000, 8000, num_samples]
     else:
-        num_splits = 10#50
+        num_splits = 50
         amount_of_data_in_interval = np.cumsum([int(num_samples / num_splits) for i in range(num_splits)])
     max_integer_val = np.iinfo(np.int32).max
     
