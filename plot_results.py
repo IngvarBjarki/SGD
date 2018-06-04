@@ -116,7 +116,10 @@ for i in range(len(plotting_n)):
                 if epsilon == '1':
                     # print once...
                     print('\n n = {}'.format(n))
-                noise_magnitude.append(results[epsilon][n]['noise_magnitude'])
+                
+                
+                #noise_magnitude.append(results[epsilon][n]['weights'])
+                noise_magnitude.append(results[epsilon][n]['noise_and_weights_magnitude'])
     
         x_labels.append(get_label[epsilon])
     
@@ -132,29 +135,63 @@ for i in range(len(plotting_n)):
 
 
 #%%
-# look at the noise distribution
+# look at how the noise influences the weights by injecting into the training
 plotting_n = [0, int(len(results[epsilon]) / 2), int(len(results[epsilon])) - 1]
 for i in range(len(plotting_n)):
-    noise = [[] for i in range(len(results))]
+    noise_magnitude = []
     x_labels = []
     # look at the noise magnitude
-    for j, epsilon in enumerate(results):
+    for epsilon in results:
         
-        for k, n in enumerate(results[epsilon]):
+        for j, n in enumerate(results[epsilon]):
             
-            if k == plotting_n[i]:
+            if j == plotting_n[i]:
                 if epsilon == '1':
                     # print once...
                     print('\n n = {}'.format(n))
-                noise[j] += [np.arcsinh(i) for i in results[epsilon][n]['noise']]
+                
+                
+                noise_magnitude.append(results[epsilon][n]['weights'])
+                #noise_magnitude.append(results[epsilon][n]['noise_and_weights_magnitude'])
     
         x_labels.append(get_label[epsilon])
     
     
     
-    sns.boxplot(data = noise)
+    sns.barplot(data = noise_magnitude, estimator = sum)
+    plt.yscale('log')
     plt.xticks(range(len(x_labels)), x_labels, rotation=45)
     plt.show()
+
+
+
+
+#%%
+# =============================================================================
+# # look at the noise distribution
+# plotting_n = [0, int(len(results[epsilon]) / 2), int(len(results[epsilon])) - 1]
+# for i in range(len(plotting_n)):
+#     noise = [[] for i in range(len(results))]
+#     x_labels = []
+#     # look at the noise magnitude
+#     for j, epsilon in enumerate(results):
+#         
+#         for k, n in enumerate(results[epsilon]):
+#             
+#             if k == plotting_n[i]:
+#                 if epsilon == '1':
+#                     # print once...
+#                     print('\n n = {}'.format(n))
+#                 noise[j] += [np.arcsinh(i) for i in results[epsilon][n]['noise']]
+#     
+#         x_labels.append(get_label[epsilon])
+#     
+#     
+#     
+#     sns.boxplot(data = noise)
+#     plt.xticks(range(len(x_labels)), x_labels, rotation=45)
+#     plt.show()
+# =============================================================================
 
 
 

@@ -60,13 +60,16 @@ def sgd(all_input_params):
         for n in amount_in_interval:
             if n not in results[epsilon]:
                 results[epsilon][n] = {}
-                results[epsilon][n]['noise'] = []
+                #results[epsilon][n]['noise'] = []
             
             weights = np.array([0.0 for i in range(num_dimensions)])
             # param is a list which has the order -> [learning_rate, batch_size, weight_decay]
             #learning_rate = parameters[epsilon][n]['parameters'][0]
             batch_size  = parameters[epsilon][n]['parameters'][0]
             weight_decay = parameters[epsilon][n]['parameters'][1]
+            
+            # this if sentance is just so we can invetegate some properties only for the last model
+            # where it is trained on all avilable data
             if n != amount_in_interval[-1]:
                 t = 0
                 for i in range(epochs):
@@ -90,7 +93,7 @@ def sgd(all_input_params):
                         weights -= learning_rates[t] *(objective_derivative)
                         
                         # keep all the noise added so we can investegate it's distribution
-                        results[epsilon][n]['noise'] += noise.tolist()
+                        #results[epsilon][n]['noise'] += noise.tolist()
                         t += 1
             else:
 
@@ -135,7 +138,7 @@ def sgd(all_input_params):
                      
                         
                         objective_info[epsilon]['num_points'].append(j+batch_size + points_from_last_epoch) # if we go to the next epoch we keep on couniting
-                        results[epsilon][n]['noise'] += noise.tolist()
+                        #results[epsilon][n]['noise'] += noise.tolist()
                         t += 1
                     
                     
@@ -154,11 +157,16 @@ def sgd(all_input_params):
             
             # take the last iteration of the noise and find its magnitude
             # this is done to compare it to the wegiths to see how it influences
-            # the decision process
-            results[epsilon][n]['noise_magnitude'] = sum(abs(noise))
-            #results[epsilon][n]['weights'] = sum(abs(weights))
-
+            # the decision process -- when epsilon is inf no noise is added and we can see how the weights are
+            if epsilon == float('Inf'):
+                results[epsilon][n]['noise_and_weights_magnitude'] = sum(abs(weights))
+            else:
+                results[epsilon][n]['noise_and_weights_magnitude'] = sum(abs(noise))
+                
+            # lets investegate how the noise affects the weights .. by looking at how the final weights are after
+            # each noise level
             
+            results[epsilon][n]['weights'] = sum(abs(weights))
                     
     
     return (results, objective_info)
@@ -318,12 +326,15 @@ if __name__ == '__main__':
                 if n_key not in results_flatten[epsilon_key]:
                     results_flatten[epsilon_key][n_key] = {}
                     results_flatten[epsilon_key][n_key]['error_rate'] = [result[epsilon][n]['error_rate']]
-                    results_flatten[epsilon_key][n_key]['noise'] = result[epsilon][n]['noise']
-                    results_flatten[epsilon_key][n_key]['noise_magnitude'] = [result[epsilon][n]['noise_magnitude']]
+                    #results_flatten[epsilon_key][n_key]['noise'] = result[epsilon][n]['noise']
+                    results_flatten[epsilon_key][n_key]['noise_and_weights_magnitude'] = [result[epsilon][n]['noise_and_weights_magnitude']]
+                    results_flatten[epsilon_key][n_key]['weights'] = [result[epsilon][n]['weights']]
                 else:
                     results_flatten[epsilon_key][n_key]['error_rate'].append(result[epsilon][n]['error_rate'])
-                    results_flatten[epsilon_key][n_key]['noise'] += result[epsilon][n]['noise']
-                    results_flatten[epsilon_key][n_key]['noise_magnitude'].append(result[epsilon][n]['noise_magnitude'])
+                    #results_flatten[epsilon_key][n_key]['noise'] += result[epsilon][n]['noise']
+                    results_flatten[epsilon_key][n_key]['noise_and_weights_magnitude'].append(result[epsilon][n]['noise_and_weights_magnitude'])
+                    results_flatten[epsilon_key][n_key]['weights'].append(result[epsilon][n]['weights'])
+                    
         
     # save the data as json and use it in the plot_results.py file
     file_name = 'results.json'
