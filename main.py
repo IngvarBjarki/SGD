@@ -251,7 +251,7 @@ if __name__ == '__main__':
     
     # split the data upp so to get the learning curve
     num_samples = len(y_train) 
-    num_splits = 10#50
+    num_splits = 50
     if small_intervals_in_begining:
         samples_to_check = 1000
         amount_of_data_in_interval = np.cumsum([int(samples_to_check / num_splits) for i in range(num_splits - 5)]).tolist()
