@@ -265,7 +265,7 @@ if __name__ == '__main__':
     if small_intervals_in_begining:
         json_file = 'parameters_tight_begining.json'
     else:
-        json_file = 'parameters.JSON'
+        json_file = 'parameters.json'
     # get the parameters from training
     with open(json_file) as json_data:
         parameters = json.load(json_data)
