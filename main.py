@@ -74,7 +74,7 @@ def sgd(all_input_params):
                 t = 0
                 for i in range(epochs):
                     # shuffle the data so the minibatch takes different data in each epoch
-                    X_train, y_train = shuffle(X_train, y_train)
+                    X_train, y_train = shuffle(X_train[:int(n)], y_train[:int(n)])
                     for j in range(0, len(y_train), batch_size):
                         X_batch = X_train[j:j+batch_size]
                         y_batch = y_train[j:j+batch_size]
@@ -112,7 +112,7 @@ def sgd(all_input_params):
                         points_from_last_epoch = 0
                         
                     # shuffle the data so the minibatch takes different data in each epoch
-                    X_train, y_train = shuffle(X_train, y_train)
+                    X_train, y_train = shuffle(X_train[:int(n)], y_train[:int(n)])
                     for j in range(0, len(y_train), batch_size):
                         X_batch = X_train[j:j+batch_size]
                         y_batch = y_train[j:j+batch_size]
